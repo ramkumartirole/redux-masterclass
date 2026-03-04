@@ -1,0 +1,1785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Redux Masterclass — Basic to Advanced</title>
+
+  <!-- Redux CDN -->
+  <script src="https://unpkg.com/redux@5.0.0/dist/redux.legacy-esm.js" type="module"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;700;800&display=swap');
+
+    :root {
+      --bg:       #0c0e14;
+      --surface:  #13161f;
+      --border:   #1f2433;
+      --accent:   #7c6af7;
+      --accent2:  #f97316;
+      --green:    #22d3a8;
+      --red:      #f43f5e;
+      --yellow:   #fbbf24;
+      --text:     #e2e8f0;
+      --muted:    #64748b;
+      --code-bg:  #090b10;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Syne', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ─── HEADER ──────────────────────────────── */
+    header {
+      padding: 3rem 2rem 2rem;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+      background: radial-gradient(ellipse at 50% 0%, #1a1040 0%, transparent 70%);
+    }
+    header h1 {
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 800;
+      letter-spacing: -1px;
+      background: linear-gradient(135deg, #7c6af7, #f97316, #22d3a8);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    header p { color: var(--muted); margin-top: .5rem; font-size: 1.05rem; }
+
+    /* ─── NAV ─────────────────────────────────── */
+    nav {
+      display: flex; flex-wrap: wrap; gap: .5rem;
+      justify-content: center;
+      padding: 1.2rem 2rem;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 100;
+    }
+    nav button {
+      background: var(--border);
+      color: var(--muted);
+      border: 1px solid transparent;
+      padding: .4rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: 'Syne', sans-serif;
+      font-size: .85rem;
+      font-weight: 600;
+      transition: all .2s;
+    }
+    nav button:hover { border-color: var(--accent); color: var(--text); }
+    nav button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    /* ─── LAYOUT ──────────────────────────────── */
+    main { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+    .section { display: none; animation: fadeIn .3s ease; }
+    .section.active { display: block; }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+    /* ─── LESSON HEADER ───────────────────────── */
+    .lesson-header { margin-bottom: 2rem; }
+    .lesson-badge {
+      display: inline-flex; align-items: center; gap: .4rem;
+      background: var(--border);
+      color: var(--accent);
+      font-size: .75rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+      padding: .3rem .8rem; border-radius: 4px;
+      margin-bottom: .8rem;
+    }
+    .lesson-header h2 { font-size: 2rem; font-weight: 800; letter-spacing: -.5px; }
+    .lesson-header p { color: var(--muted); margin-top: .4rem; line-height: 1.7; max-width: 700px; }
+
+    /* ─── CONCEPT CARD ────────────────────────── */
+    .concept-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px,1fr)); gap: 1rem; margin: 1.5rem 0; }
+    .concept-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.2rem;
+    }
+    .concept-card h4 { color: var(--accent); font-size: .9rem; margin-bottom: .5rem; }
+    .concept-card p { color: var(--muted); font-size: .88rem; line-height: 1.6; }
+
+    /* ─── CODE BLOCK ──────────────────────────── */
+    .code-block {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin: 1.2rem 0;
+      overflow: hidden;
+    }
+    .code-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: .6rem 1rem;
+      background: var(--border);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .75rem;
+      color: var(--muted);
+    }
+    .code-header .filename { color: var(--accent2); font-weight: 600; }
+    .code-header .lang-tag {
+      background: var(--surface);
+      padding: .15rem .5rem;
+      border-radius: 4px;
+      font-size: .7rem;
+      color: var(--muted);
+    }
+    .code-block pre {
+      padding: 1.2rem;
+      overflow-x: auto;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .82rem;
+      line-height: 1.7;
+      color: #c9d1d9;
+    }
+
+    /* syntax colours */
+    .kw  { color: #ff7b72; }
+    .fn  { color: #d2a8ff; }
+    .str { color: #a5d6ff; }
+    .cmt { color: #6e7681; font-style: italic; }
+    .num { color: #f2cc60; }
+    .var { color: #ffa657; }
+    .type{ color: #79c0ff; }
+    .op  { color: #f97316; }
+
+    /* ─── DEMO AREA ───────────────────────────── */
+    .demo-container {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+    }
+    .demo-container h3 {
+      font-size: 1rem; font-weight: 700; color: var(--green);
+      margin-bottom: 1rem;
+      display: flex; align-items: center; gap: .5rem;
+    }
+    .demo-container h3::before { content: '▶'; font-size: .8rem; }
+
+    .demo-controls { display: flex; flex-wrap: wrap; gap: .7rem; margin-bottom: 1rem; }
+
+    .btn {
+      padding: .5rem 1.2rem;
+      border: none; border-radius: 7px; cursor: pointer;
+      font-family: 'Syne', sans-serif; font-weight: 700; font-size: .85rem;
+      transition: all .15s;
+    }
+    .btn:hover { transform: translateY(-1px); filter: brightness(1.1); }
+    .btn:active { transform: translateY(0); }
+    .btn-primary  { background: var(--accent);  color: #fff; }
+    .btn-success  { background: var(--green);   color: #000; }
+    .btn-danger   { background: var(--red);     color: #fff; }
+    .btn-warning  { background: var(--yellow);  color: #000; }
+    .btn-neutral  { background: var(--border);  color: var(--text); }
+
+    .state-display {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .82rem;
+      line-height: 1.6;
+    }
+    .state-label { color: var(--muted); font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; margin-bottom: .4rem; }
+    .state-value { color: var(--green); }
+
+    /* ─── STEP BADGE ──────────────────────────── */
+    .steps { counter-reset: step; }
+    .step {
+      display: flex; gap: 1rem; margin: 1.2rem 0;
+    }
+    .step::before {
+      counter-increment: step;
+      content: counter(step);
+      min-width: 28px; height: 28px;
+      background: var(--accent);
+      color: #fff;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .8rem; font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 3px;
+    }
+    .step-body h4 { font-size: .95rem; font-weight: 700; margin-bottom: .3rem; }
+    .step-body p { color: var(--muted); font-size: .88rem; line-height: 1.6; }
+
+    /* ─── FLOW DIAGRAM ────────────────────────── */
+    .flow {
+      display: flex; align-items: center; justify-content: center;
+      flex-wrap: wrap; gap: .5rem;
+      padding: 1.5rem;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin: 1.2rem 0;
+    }
+    .flow-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: .6rem 1.1rem;
+      font-weight: 700; font-size: .85rem;
+      text-align: center;
+    }
+    .flow-box.accent  { border-color: var(--accent);  color: var(--accent);  }
+    .flow-box.green   { border-color: var(--green);   color: var(--green);   }
+    .flow-box.orange  { border-color: var(--accent2); color: var(--accent2); }
+    .flow-box.red     { border-color: var(--red);     color: var(--red);     }
+    .flow-arrow { color: var(--muted); font-size: 1.2rem; }
+
+    /* ─── LOG ─────────────────────────────────── */
+    .log {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: .8rem;
+      max-height: 200px;
+      overflow-y: auto;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .78rem;
+      line-height: 1.7;
+    }
+    .log-entry { border-bottom: 1px solid var(--border); padding: .2rem 0; }
+    .log-entry:last-child { border: none; }
+    .log-ts { color: var(--muted); }
+    .log-action { color: var(--accent2); font-weight: 600; }
+    .log-state { color: var(--green); }
+
+    /* ─── CART ────────────────────────────────── */
+    .cart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media(max-width:600px) { .cart-grid { grid-template-columns: 1fr; } }
+    .cart-item {
+      background: var(--border);
+      border-radius: 8px;
+      padding: .8rem;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .cart-item .name { font-weight: 600; font-size: .9rem; }
+    .cart-item .price { color: var(--green); font-family: 'JetBrains Mono', monospace; font-size: .85rem; }
+    .cart-total {
+      background: var(--accent);
+      border-radius: 8px;
+      padding: .8rem 1rem;
+      font-weight: 700;
+      display: flex; justify-content: space-between;
+      margin-top: .5rem;
+    }
+
+    /* ─── TODO ────────────────────────────────── */
+    .todo-input { display: flex; gap: .5rem; margin-bottom: 1rem; }
+    .todo-input input {
+      flex: 1;
+      background: var(--code-bg); border: 1px solid var(--border);
+      border-radius: 7px; padding: .55rem .9rem;
+      color: var(--text); font-family: 'Syne', sans-serif; font-size: .9rem;
+      outline: none;
+    }
+    .todo-input input:focus { border-color: var(--accent); }
+    .todo-list { display: flex; flex-direction: column; gap: .4rem; }
+    .todo-item {
+      display: flex; align-items: center; gap: .7rem;
+      background: var(--border); border-radius: 7px; padding: .6rem .9rem;
+    }
+    .todo-item span { flex: 1; font-size: .9rem; }
+    .todo-item.done span { text-decoration: line-through; color: var(--muted); }
+    .todo-filters { display: flex; gap: .5rem; margin-bottom: .8rem; }
+    .filter-btn {
+      padding: .3rem .8rem; background: var(--border); border: 1px solid var(--border);
+      border-radius: 5px; color: var(--muted); cursor: pointer;
+      font-family: 'Syne', sans-serif; font-size: .8rem; font-weight: 600;
+    }
+    .filter-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    /* ─── ASYNC DEMO ──────────────────────────── */
+    .users-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px,1fr)); gap: .8rem; margin-top: 1rem; }
+    .user-card {
+      background: var(--border); border-radius: 8px; padding: .9rem;
+      text-align: center;
+    }
+    .user-card .avatar {
+      width: 40px; height: 40px; background: var(--accent);
+      border-radius: 50%; margin: 0 auto .5rem;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 1rem;
+    }
+    .user-card .uname { font-weight: 600; font-size: .85rem; }
+    .user-card .uemail { color: var(--muted); font-size: .75rem; margin-top: .2rem; word-break: break-all; }
+
+    .status-badge {
+      display: inline-block;
+      padding: .2rem .7rem; border-radius: 4px;
+      font-size: .75rem; font-weight: 700;
+    }
+    .status-badge.idle    { background: var(--border);  color: var(--muted); }
+    .status-badge.loading { background: #1c2a1c; color: var(--green); }
+    .status-badge.success { background: #142214; color: var(--green); }
+    .status-badge.error   { background: #2a1218; color: var(--red); }
+
+    /* ─── MIDDLEWARE VIZ ──────────────────────── */
+    .mw-pipeline {
+      display: flex; flex-direction: column; gap: .5rem; margin: 1rem 0;
+    }
+    .mw-step {
+      background: var(--border); border-radius: 7px; padding: .7rem 1rem;
+      border-left: 3px solid var(--accent);
+      font-size: .85rem; display: flex; align-items: center; gap: .5rem;
+    }
+    .mw-step.active { border-left-color: var(--green); background: #0d1f14; color: var(--green); }
+    .mw-icon { font-size: 1rem; }
+
+    /* ─── TABS ────────────────────────────────── */
+    .tabs { display: flex; gap: .3rem; margin-bottom: 0; border-bottom: 1px solid var(--border); }
+    .tab {
+      padding: .5rem 1rem; cursor: pointer;
+      font-weight: 600; font-size: .85rem; color: var(--muted);
+      border-bottom: 2px solid transparent; margin-bottom: -1px;
+    }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-content { padding: 1rem 0; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--code-bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    .highlight { color: var(--accent2); font-weight: 700; }
+    .badge { display: inline-block; padding: .15rem .5rem; border-radius: 4px; font-size: .75rem; font-weight: 700; }
+    .badge-new { background: #1a2e1a; color: var(--green); }
+    .badge-rtk { background: #1a1840; color: var(--accent); }
+
+    hr.divider { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Redux Masterclass</h1>
+  <p>From absolute basics → production-grade patterns — with live interactive demos</p>
+</header>
+
+<nav id="mainNav">
+  <button class="active" onclick="showSection('s0')">🧠 What is Redux?</button>
+  <button onclick="showSection('s1')">1 · Core Concepts</button>
+  <button onclick="showSection('s2')">2 · Counter Demo</button>
+  <button onclick="showSection('s3')">3 · Multiple Reducers</button>
+  <button onclick="showSection('s4')">4 · Todo App</button>
+  <button onclick="showSection('s5')">5 · Middleware</button>
+  <button onclick="showSection('s6')">6 · Async / Thunk</button>
+  <button onclick="showSection('s7')">7 · Redux Toolkit</button>
+  <button onclick="showSection('s8')">8 · Shopping Cart</button>
+  <button onclick="showSection('s9')">9 · Best Practices</button>
+</nav>
+
+<main>
+
+<!-- ════════════════════════════════════════
+     SECTION 0 — WHAT IS REDUX?
+════════════════════════════════════════ -->
+<div class="section active" id="s0">
+  <div class="lesson-header">
+    <div class="lesson-badge">Introduction</div>
+    <h2>What is Redux & Why Use It?</h2>
+    <p>Redux is a predictable state container for JavaScript apps. It centralises your application's state so every part of your app can read from and write to a single source of truth.</p>
+  </div>
+
+  <div class="concept-grid">
+    <div class="concept-card">
+      <h4>🗃️ Single Source of Truth</h4>
+      <p>All state lives in one object tree inside a single store. Easier to debug, inspect, and persist.</p>
+    </div>
+    <div class="concept-card">
+      <h4>📖 State is Read-Only</h4>
+      <p>The only way to change state is to emit an <em>action</em> — a plain object describing what happened.</p>
+    </div>
+    <div class="concept-card">
+      <h4>⚙️ Pure Functions</h4>
+      <p>Reducers are pure functions that take previous state + action and return next state. No side effects.</p>
+    </div>
+    <div class="concept-card">
+      <h4>🔮 Predictability</h4>
+      <p>Because state changes follow strict rules, the app behaves consistently and is easy to test.</p>
+    </div>
+  </div>
+
+  <div class="flow">
+    <div class="flow-box accent">UI Component</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box orange">dispatch(action)</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box red">Reducer</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box green">New State</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box accent">Re-render</div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header"><span class="filename">01-what-is-redux.js</span><span class="lang-tag">JavaScript</span></div>
+    <pre>
+<span class="cmt">// ─────────────────────────────────────────────
+// REDUX IN 3 LINES (conceptually)
+// ─────────────────────────────────────────────</span>
+
+<span class="cmt">// 1. State — the entire app state lives here</span>
+<span class="kw">const</span> <span class="var">initialState</span> = { count: <span class="num">0</span> };
+
+<span class="cmt">// 2. Action — a plain object describing WHAT happened</span>
+<span class="kw">const</span> <span class="var">incrementAction</span> = { type: <span class="str">'counter/increment'</span> };
+
+<span class="cmt">// 3. Reducer — a PURE function: (state, action) => newState</span>
+<span class="kw">function</span> <span class="fn">reducer</span>(state = initialState, action) {
+  <span class="kw">switch</span> (action.type) {
+    <span class="kw">case</span> <span class="str">'counter/increment'</span>:
+      <span class="kw">return</span> { ...state, count: state.count + <span class="num">1</span> };
+    <span class="kw">default</span>:
+      <span class="kw">return</span> state;
+  }
+}
+
+<span class="cmt">// Store ties everything together</span>
+<span class="kw">const</span> <span class="var">store</span> = Redux.createStore(reducer);
+
+store.dispatch(incrementAction);
+console.log(store.getState()); <span class="cmt">// { count: 1 }</span></pre>
+  </div>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-body">
+        <h4>Store</h4>
+        <p>The single JavaScript object that holds all application state. Created once with <code>createStore(reducer)</code>.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-body">
+        <h4>Action</h4>
+        <p>A plain JS object with a <code>type</code> field. Describes what happened. Can carry a <code>payload</code> with data.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-body">
+        <h4>Reducer</h4>
+        <p>A pure function <code>(state, action) => newState</code>. Never mutates state — always returns a new object.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-body">
+        <h4>Dispatch</h4>
+        <p><code>store.dispatch(action)</code> is the only way to trigger a state change.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-body">
+        <h4>Subscribe</h4>
+        <p><code>store.subscribe(listener)</code> runs your callback every time state changes — used to update the UI.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════
+     SECTION 1 — CORE CONCEPTS
+════════════════════════════════════════ -->
+<div class="section" id="s1">
+  <div class="lesson-header">
+    <div class="lesson-badge">Lesson 1</div>
+    <h2>Core Concepts Deep Dive</h2>
+    <p>Understanding Actions, Action Creators, Reducers and the Store API thoroughly.</p>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab(this,'actions')">Actions</div>
+    <div class="tab" onclick="switchTab(this,'reducers')">Reducers</div>
+    <div class="tab" onclick="switchTab(this,'store-api')">Store API</div>
+    <div class="tab" onclick="switchTab(this,'immutability')">Immutability</div>
+  </div>
+  <div class="tab-content">
+
+    <div class="tab-panel active" id="tab-actions">
+      <div class="code-block">
+        <div class="code-header"><span class="filename">actions.js</span><span class="lang-tag">JavaScript</span></div>
+        <pre>
+<span class="cmt">// ─── 1. Basic Action ────────────────────────────</span>
+<span class="kw">const</span> <span class="var">action</span> = {
+  type: <span class="str">'user/login'</span>      <span class="cmt">// REQUIRED: string type</span>
+};
+
+<span class="cmt">// ─── 2. Action with Payload ─────────────────────</span>
+<span class="kw">const</span> <span class="var">addTodoAction</span> = {
+  type: <span class="str">'todos/add'</span>,
+  payload: {
+    id: <span class="num">1</span>,
+    text: <span class="str">'Learn Redux'</span>,
+    completed: <span class="kw">false</span>
+  }
+};
+
+<span class="cmt">// ─── 3. Action Creator (function that returns action)</span>
+<span class="kw">const</span> <span class="fn">addTodo</span> = (text) => ({
+  type: <span class="str">'todos/add'</span>,
+  payload: { id: Date.now(), text, completed: <span class="kw">false</span> }
+});
+
+<span class="kw">const</span> <span class="fn">toggleTodo</span> = (id) => ({
+  type: <span class="str">'todos/toggle'</span>,
+  payload: id
+});
+
+<span class="kw">const</span> <span class="fn">deleteTodo</span> = (id) => ({
+  type: <span class="str">'todos/delete'</span>,
+  payload: id
+});
+
+<span class="cmt">// ─── 4. Action Type Constants (avoid typos!) ────</span>
+<span class="kw">const</span> ADD_TODO    = <span class="str">'todos/add'</span>;
+<span class="kw">const</span> TOGGLE_TODO = <span class="str">'todos/toggle'</span>;
+<span class="kw">const</span> DELETE_TODO = <span class="str">'todos/delete'</span>;</pre>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-reducers">
+      <div class="code-block">
+        <div class="code-header"><span class="filename">reducers.js</span><span class="lang-tag">JavaScript</span></div>
+        <pre>
+<span class="cmt">// ─── Rules of Reducers ──────────────────────────
+// 1. Pure function: same input ALWAYS gives same output
+// 2. Never mutate state — return new objects/arrays
+// 3. Handle all unknown actions by returning current state
+// 4. Never produce side effects (API calls, routing, etc.)</span>
+
+<span class="kw">const</span> <span class="var">initialState</span> = {
+  items: [],
+  filter: <span class="str">'all'</span>
+};
+
+<span class="kw">function</span> <span class="fn">todosReducer</span>(state = initialState, action) {
+  <span class="kw">switch</span> (action.type) {
+
+    <span class="kw">case</span> <span class="str">'todos/add'</span>:
+      <span class="kw">return</span> {
+        ...state,
+        items: [...state.items, action.payload]  <span class="cmt">// ✅ new array</span>
+      };
+
+    <span class="kw">case</span> <span class="str">'todos/toggle'</span>:
+      <span class="kw">return</span> {
+        ...state,
+        items: state.items.map(todo =>
+          todo.id === action.payload
+            ? { ...todo, completed: !todo.completed }  <span class="cmt">// ✅ new object</span>
+            : todo
+        )
+      };
+
+    <span class="kw">case</span> <span class="str">'todos/delete'</span>:
+      <span class="kw">return</span> {
+        ...state,
+        items: state.items.filter(t => t.id !== action.payload)
+      };
+
+    <span class="kw">case</span> <span class="str">'todos/setFilter'</span>:
+      <span class="kw">return</span> { ...state, filter: action.payload };
+
+    <span class="kw">default</span>:
+      <span class="kw">return</span> state;  <span class="cmt">// ← ALWAYS return state for unknown actions</span>
+  }
+}
+
+<span class="cmt">// ─── ❌ WRONG — never do this! ──────────────────</span>
+<span class="kw">function</span> <span class="fn">badReducer</span>(state = [], action) {
+  <span class="kw">if</span> (action.type === <span class="str">'add'</span>) {
+    state.push(action.payload);  <span class="cmt">// ❌ MUTATION! Don't do this</span>
+    <span class="kw">return</span> state;
+  }
+}</pre>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-store-api">
+      <div class="code-block">
+        <div class="code-header"><span class="filename">store-api.js</span><span class="lang-tag">JavaScript</span></div>
+        <pre>
+<span class="kw">import</span> { createStore } <span class="kw">from</span> <span class="str">'redux'</span>;
+
+<span class="kw">const</span> <span class="var">store</span> = createStore(rootReducer);
+
+<span class="cmt">// ─── store.getState() ────────────────────────────
+// Returns the current state tree</span>
+<span class="kw">const</span> <span class="var">state</span> = store.getState();
+console.log(state);
+
+<span class="cmt">// ─── store.dispatch(action) ──────────────────────
+// The ONLY way to update state</span>
+store.dispatch({ type: <span class="str">'counter/increment'</span> });
+store.dispatch({ type: <span class="str">'todos/add'</span>, payload: { id: <span class="num">1</span>, text: <span class="str">'Buy milk'</span> } });
+
+<span class="cmt">// ─── store.subscribe(listener) ───────────────────
+// Called after every dispatch</span>
+<span class="kw">const</span> <span class="fn">unsubscribe</span> = store.subscribe(() => {
+  console.log(<span class="str">'State changed:'</span>, store.getState());
+  renderUI();  <span class="cmt">// re-render your UI</span>
+});
+
+<span class="cmt">// Call unsubscribe() to stop listening</span>
+unsubscribe();
+
+<span class="cmt">// ─── store.replaceReducer(newReducer) ────────────
+// Advanced: hot module replacement / code splitting</span>
+store.replaceReducer(newRootReducer);</pre>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-immutability">
+      <div class="code-block">
+        <div class="code-header"><span class="filename">immutability.js</span><span class="lang-tag">JavaScript</span></div>
+        <pre>
+<span class="cmt">// ─── IMMUTABLE UPDATE PATTERNS ──────────────────</span>
+
+<span class="cmt">// Objects</span>
+<span class="kw">const</span> <span class="var">obj</span>    = { a: <span class="num">1</span>, b: { c: <span class="num">2</span> } };
+<span class="kw">const</span> <span class="var">newObj</span> = { ...obj, a: <span class="num">10</span> };         <span class="cmt">// ✅ spread</span>
+<span class="kw">const</span> <span class="var">deep</span>   = { ...obj, b: { ...obj.b, c: <span class="num">20</span> } }; <span class="cmt">// ✅ deep spread</span>
+
+<span class="cmt">// Arrays — add item</span>
+<span class="kw">const</span> <span class="var">arr</span>     = [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>];
+<span class="kw">const</span> <span class="var">added</span>   = [...arr, <span class="num">4</span>];              <span class="cmt">// ✅</span>
+<span class="kw">const</span> <span class="var">prepend</span> = [<span class="num">0</span>, ...arr];              <span class="cmt">// ✅</span>
+
+<span class="cmt">// Arrays — remove item</span>
+<span class="kw">const</span> <span class="var">removed</span> = arr.filter(x => x !== <span class="num">2</span>); <span class="cmt">// ✅</span>
+
+<span class="cmt">// Arrays — update item</span>
+<span class="kw">const</span> <span class="var">updated</span> = arr.map(x =>
+  x === <span class="num">2</span> ? <span class="num">99</span> : x                       <span class="cmt">// ✅</span>
+);
+
+<span class="cmt">// Arrays — insert at index</span>
+<span class="kw">const</span> <span class="var">idx</span>      = <span class="num">1</span>;
+<span class="kw">const</span> <span class="var">inserted</span> = [
+  ...arr.slice(<span class="num">0</span>, idx),
+  <span class="num">99</span>,
+  ...arr.slice(idx)
+];                                         <span class="cmt">// ✅</span>
+
+<span class="cmt">// ─── WITH REDUX TOOLKIT (uses Immer under the hood)
+// You CAN write "mutating" code — RTK handles it safely!</span>
+<span class="cmt">// state.items.push(newItem)  ← ✅ ONLY inside createSlice</span></pre>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════
+     SECTION 2 — COUNTER DEMO
+════════════════════════════════════════ -->
+<div class="section" id="s2">
+  <div class="lesson-header">
+    <div class="lesson-badge">Lesson 2 · Live Demo</div>
+    <h2>Counter — Your First Redux App</h2>
+    <p>The classic starting point. One store, one reducer, real dispatch calls you can watch in the log below.</p>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header"><span class="filename">src/store/counterStore.js</span><span class="lang-tag">JavaScript</span></div>
+    <pre>
+<span class="cmt">// ─── Action Types ───────────────────────────────</span>
+<span class="kw">const</span> INCREMENT       = <span class="str">'counter/increment'</span>;
+<span class="kw">const</span> DECREMENT       = <span class="str">'counter/decrement'</span>;
+<span class="kw">const</span> INCREMENT_BY    = <span class="str">'counter/incrementBy'</span>;
+<span class="kw">const</span> RESET           = <span class="str">'counter/reset'</span>;
+
+<span class="cmt">// ─── Action Creators ────────────────────────────</span>
+<span class="kw">export const</span> <span class="fn">increment</span>    = ()      => ({ type: INCREMENT });
+<span class="kw">export const</span> <span class="fn">decrement</span>    = ()      => ({ type: DECREMENT });
+<span class="kw">export const</span> <span class="fn">incrementBy</span> = (amount) => ({ type: INCREMENT_BY, payload: amount });
+<span class="kw">export const</span> <span class="fn">reset</span>       = ()      => ({ type: RESET });
+
+<span class="cmt">// ─── Reducer ─────────────────────────────────────</span>
+<span class="kw">const</span> <span class="var">initialState</span> = { value: <span class="num">0</span>, history: [] };
+
+<span class="kw">function</span> <span class="fn">counterReducer</span>(state = initialState, action) {
+  <span class="kw">switch</span> (action.type) {
+    <span class="kw">case</span> INCREMENT:
+      <span class="kw">return</span> { value: state.value + <span class="num">1</span>, history: [...state.history, state.value + <span class="num">1</span>] };
+    <span class="kw">case</span> DECREMENT:
+      <span class="kw">return</span> { value: state.value - <span class="num">1</span>, history: [...state.history, state.value - <span class="num">1</span>] };
+    <span class="kw">case</span> INCREMENT_BY:
+      <span class="kw">return</span> { value: state.value + action.payload, history: [...state.history, state.value + action.payload] };
+    <span class="kw">case</span> RESET:
+      <span class="kw">return</span> { value: <span class="num">0</span>, history: [...state.history, <span class="num">0</span>] };
+    <span class="kw">default</span>:
+      <span class="kw">return</span> state;
+  }
+}
+
+<span class="cmt">// ─── Store ───────────────────────────────────────</span>
+<span class="kw">export const</span> <span class="var">counterStore</span> = Redux.createStore(counterReducer);</pre>
+  </div>
+
+  <div class="demo-container">
+    <h3>Live Counter</h3>
+    <div style="text-align:center; margin-bottom:1.5rem;">
+      <div id="counterDisplay" style="font-size:4rem; font-weight:800; font-family:'JetBrains Mono',monospace; color:var(--accent); line-height:1;">0</div>
+      <div style="color:var(--muted); font-size:.8rem; margin-top:.3rem;">current value</div>
+    </div>
+    <div class="demo-controls" style="justify-content:center;">
+      <button class="btn btn-danger"   onclick="counterDispatch('dec')">− Decrement</button>
+      <button class="btn btn-neutral"  onclick="counterDispatch('reset')">↺ Reset</button>
+      <button class="btn btn-success"  onclick="counterDispatch('inc')">+ Increment</button>
+      <button class="btn btn-warning"  onclick="counterDispatch('by5')">+5</button>
+      <button class="btn btn-warning"  onclick="counterDispatch('by10')">+10</button>
+    </div>
+    <div style="margin-top:1rem;">
+      <div class="state-label">Action Log</div>
+      <div class="log" id="counterLog"><div style="color:var(--muted); font-size:.8rem;">Dispatch an action to see log…</div></div>
+    </div>
+    <div style="margin-top:1rem;">
+      <div class="state-label">Full State</div>
+      <div class="state-display" id="counterState">{ value: 0, history: [] }</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════
+     SECTION 3 — MULTIPLE REDUCERS / combineReducers
+════════════════════════════════════════ -->
+<div class="section" id="s3">
+  <div class="lesson-header">
+    <div class="lesson-badge">Lesson 3</div>
+    <h2>combineReducers — Splitting State</h2>
+    <p>Real apps have complex state. <code>combineReducers</code> lets each reducer manage its own slice.</p>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header"><span class="filename">src/store/rootReducer.js</span><span class="lang-tag">JavaScript</span></div>
+    <pre>
+<span class="kw">import</span> { createStore, combineReducers } <span class="kw">from</span> <span class="str">'redux'</span>;
+
+<span class="cmt">// ─── Slice 1: Counter ────────────────────────────</span>
+<span class="kw">function</span> <span class="fn">counterReducer</span>(state = { value: <span class="num">0</span> }, action) {
+  <span class="kw">switch</span> (action.type) {
+    <span class="kw">case</span> <span class="str">'counter/increment'</span>: <span class="kw">return</span> { value: state.value + <span class="num">1</span> };
+    <span class="kw">case</span> <span class="str">'counter/decrement'</span>: <span class="kw">return</span> { value: state.value - <span class="num">1</span> };
+    <span class="kw">default</span>: <span class="kw">return</span> state;
+  }
+}
+
+<span class="cmt">// ─── Slice 2: Auth ───────────────────────────────</span>
+<span class="kw">function</span> <span class="fn">authReducer</span>(state = { user: <span class="kw">null</span>, isLoggedIn: <span class="kw">false</span> }, action) {
+  <span class="kw">switch</span> (action.type) {
+    <span class="kw">case</span> <span class="str">'auth/login'</span>:
+      <span class="kw">return</span> { user: action.payload, isLoggedIn: <span class="kw">true</span> };
+    <span class="kw">case</span> <span class="str">'auth/logout'</span>:
+      <span class="kw">return</span> { user: <span class="kw">null</span>, isLoggedIn: <span class="kw">false</span> };
+    <span class="kw">default</span>: <span class="kw">return</span> state;
+  }
+}
+
+<span class="cmt">// ─── Slice 3: Notifications ──────────────────────</span>
+<span class="kw">function</span> <span class="fn">notifReducer</span>(state = [], action) {
+  <span class="kw">switch</span> (action.type) {
+    <span class="kw">case</span> <span class="str">'notif/add'</span>:
+      <span class="kw">return</span> [...state, { id: Date.now(), ...action.payload }];
+    <span class="kw">case</span> <span class="str">'notif/remove'</span>:
+      <span class="kw">return</span> state.filter(n => n.id !== action.payload);
+    <span class="kw">default</span>: <span class="kw">return</span> state;
+  }
+}
+
+<span class="cmt">// ─── Root Reducer — combines all slices ──────────</span>
+<span class="kw">const</span> <span class="var">rootReducer</span> = combineReducers({
+  counter:       counterReducer,  <span class="cmt">// state.counter</span>
+  auth:          authReducer,     <span class="cmt">// state.auth</span>
+  notifications: notifReducer,    <span class="cmt">// state.notifications</span>
+});
+
+<span class="cmt">// Resulting state shape:
+// {
+//   counter: { value: 0 },
+//   auth: { user: null, isLoggedIn: false },
+//   notifications: []
+// }</span>
+
+<span class="kw">export const</span> <span class="var">store</span> = createStore(rootReducer);</pre>
+  </div>
+
+  <div class="demo-container">
+    <h3>Combined Store Demo</h3>
+    <div class="demo-controls">
+      <button class="btn btn-success"  onclick="combinedDemo('inc')">Counter +1</button>
+      <button class="btn btn-danger"   onclick="combinedDemo('dec')">Counter −1</button>
+      <button class="btn btn-primary"  onclick="combinedDemo('login')">Login User</button>
+      <button class="btn btn-neutral"  onclick="combinedDemo('logout')">Logout</button>
+      <button class="btn btn-warning"  onclick="combinedDemo('notif')">Add Notification</button>
+    </div>
+    <div style="margin-top:1rem;">
+      <div class="state-label">Combined State Tree</div>
+      <div class="state-display" id="combinedState">Loading…</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════
+     SECTION 4 — TODO APP
+════════════════════════════════════════ -->
+<div class="section" id="s4">
+  <div class="lesson-header">
+    <div class="lesson-badge">Lesson 4 · Live Demo</div>
+    <h2>Todo App — CRUD with Redux</h2>
+    <p>Add, toggle, delete, filter todos. Demonstrates array state management patterns.</p>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header"><span class="filename">src/store/slices/todosReducer.js</span><span class="lang-tag">JavaScript</span></div>
+    <pre>
+<span class="kw">const</span> <span class="var">initialState</span> = {
+  items: [],
+  filter: <span class="str">'all'</span>,          <span class="cmt">// 'all' | 'active' | 'completed'</span>
+  nextId: <span class="num">1</span>
+};
+
+<span class="kw">export function</span> <span class="fn">todosReducer</span>(state = initialState, action) {
+  <span class="kw">switch</span> (action.type) {
+
+    <span class="kw">case</span> <span class="str">'todos/add'</span>:
+      <span class="kw">return</span> {
+        ...state,
+        items: [...state.items, {
+          id: state.nextId,
+          text: action.payload,
+          completed: <span class="kw">false</span>
+        }],
+        nextId: state.nextId + <span class="num">1</span>
+      };
+
+    <span class="kw">case</span> <span class="str">'todos/toggle'</span>:
+      <span class="kw">return</span> {
+        ...state,
+        items: state.items.map(t =>
+          t.id === action.payload ? { ...t, completed: !t.completed } : t
+        )
+      };
+
+    <span class="kw">case</span> <span class="str">'todos/delete'</span>:
+      <span class="kw">return</span> { ...state, items: state.items.filter(t => t.id !== action.payload) };
+
+    <span class="kw">case</span> <span class="str">'todos/clearCompleted'</span>:
+      <span class="kw">return</span> { ...state, items: state.items.filter(t => !t.completed) };
+
+    <span class="kw">case</span> <span class="str">'todos/setFilter'</span>:
+      <span class="kw">return</span> { ...state, filter: action.payload };
+
+    <span class="kw">default</span>: <span class="kw">return</span> state;
+  }
+}
+
+<span class="cmt">// ─── Selector (derived state) ────────────────────</span>
+<span class="kw">export const</span> <span class="fn">selectVisibleTodos</span> = (state) => {
+  <span class="kw">const</span> { items, filter } = state.todos;
+  <span class="kw">if</span> (filter === <span class="str">'active'</span>)    <span class="kw">return</span> items.filter(t => !t.completed);
+  <span class="kw">if</span> (filter === <span class="str">'completed'</span>) <span class="kw">return</span> items.filter(t =>  t.completed);
+  <span class="kw">return</span> items;
+};</pre>
+  </div>
+
+  <div class="demo-container">
+    <h3>Todo App</h3>
+    <div class="todo-input">
+      <input type="text" id="todoInput" placeholder="Add a new todo…" onkeypress="if(event.key==='Enter')addTodo()" />
+      <button class="btn btn-primary" onclick="addTodo()">Add</button>
+    </div>
+    <div class="todo-filters">
+      <button class="filter-btn active" id="filter-all"       onclick="setFilter('all',this)">All</button>
+      <button class="filter-btn"        id="filter-active"    onclick="setFilter('active',this)">Active</button>
+      <button class="filter-btn"        id="filter-completed" onclick="setFilter('completed',this)">Completed</button>
+      <button class="filter-btn"        style="margin-left:auto" onclick="clearCompleted()">Clear Completed</button>
+    </div>
+    <div class="todo-list" id="todoList"><div style="color:var(--muted);text-align:center;padding:1rem;font-size:.85rem;">No todos yet. Add one above!</div></div>
+    <div style="margin-top:1rem;">
+      <div class="state-label">Redux State</div>
+      <div class="state-display" id="todoState">{ items: [], filter: 'all' }</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════
+     SECTION 5 — MIDDLEWARE
+════════════════════════════════════════ -->
+<div class="section" id="s5">
+  <div class="lesson-header">
+    <div class="lesson-badge">Lesson 5</div>
+    <h2>Middleware</h2>
+    <p>Middleware intercepts dispatched actions before they reach the reducer. Perfect for logging, analytics, auth checks, and async operations.</p>
+  </div>
+
+  <div class="flow">
+    <div class="flow-box accent">dispatch(action)</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box orange">Logger MW</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box red">Auth MW</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box" style="border-color:var(--yellow);color:var(--yellow);">Thunk MW</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box green">Reducer</div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header"><span class="filename">src/store/middleware/logger.js</span><span class="lang-tag">JavaScript</span></div>
+    <pre>
+<span class="cmt">// ─── Middleware Signature ────────────────────────
+// A middleware is a curried function:
+//   store => next => action => { ... }</span>
+
+<span class="cmt">// 1. Logger Middleware</span>
+<span class="kw">const</span> <span class="fn">loggerMiddleware</span> = store => next => action => {
+  console.group(<span class="str">`Action: ${action.type}`</span>);
+  console.log(<span class="str">'Prev State:'</span>, store.getState());
+  console.log(<span class="str">'Action:'</span>,     action);
+
+  <span class="kw">const</span> <span class="var">result</span> = next(action);  <span class="cmt">// pass to next middleware / reducer</span>
+
+  console.log(<span class="str">'Next State:'</span>, store.getState());
+  console.groupEnd();
+  <span class="kw">return</span> result;
+};
+
+<span class="cmt">// 2. Analytics Middleware</span>
+<span class="kw">const</span> <span class="fn">analyticsMiddleware</span> = store => next => action => {
+  <span class="kw">if</span> (action.track) {
+    sendToAnalytics({ event: action.type, ...action.meta });
+  }
+  <span class="kw">return</span> next(action);
+};
+
+<span class="cmt">// 3. Auth Guard Middleware</span>
+<span class="kw">const</span> <span class="fn">authMiddleware</span> = store => next => action => {
+  <span class="kw">const</span> <span class="var">protectedActions</span> = [<span class="str">'cart/checkout'</span>, <span class="str">'user/updateProfile'</span>];
+  <span class="kw">if</span> (protectedActions.includes(action.type)) {
+    <span class="kw">const</span> { isLoggedIn } = store.getState().auth;
+    <span class="kw">if</span> (!isLoggedIn) {
+      store.dispatch({ type: <span class="str">'ui/showLoginModal'</span> });
+      <span class="kw">return</span>;  <span class="cmt">// block the action</span>
+    }
+  }
+  <span class="kw">return</span> next(action);
+};
+
+<span class="cmt">// ─── Apply Middleware ────────────────────────────</span>
+<span class="kw">import</span> { createStore, applyMiddleware } <span class="kw">from</span> <span class="str">'redux'</span>;
+
+<span class="kw">const</span> <span class="var">store</span> = createStore(
+  rootReducer,
+  applyMiddleware(loggerMiddleware, analyticsMiddleware, authMiddleware)
+);</pre>
+  </div>
+
+  <div class="demo-container">
+    <h3>Middleware Pipeline Visualizer</h3>
+    <p style="color:var(--muted);font-size:.85rem;margin-bottom:1rem;">Watch how an action flows through the middleware chain.</p>
+    <div class="demo-controls">
+      <button class="btn btn-primary" onclick="runMwDemo('counter/increment')">Normal Action</button>
+      <button class="btn btn-warning" onclick="runMwDemo('cart/checkout')">Protected Action (no auth)</button>
+    </div>
+    <div class="mw-pipeline" id="mwPipeline">
+      <div class="mw-step" id="mw0"><span class="mw-icon">⚡</span> dispatch(action)</div>
+      <div class="mw-step" id="mw1"><span class="mw-icon">📝</span> Logger Middleware — logs prev state</div>
+      <div class="mw-step" id="mw2"><span class="mw-icon">🔐</span> Auth Middleware — checks permission</div>
+      <div class="mw-step" id="mw3"><span class="mw-icon">⚙️</span> Reducer — computes new state</div>
+      <div class="mw-step" id="mw4"><span class="mw-icon">✅</span> State Updated → UI re-renders</div>
+    </div>
+    <div style="margin-top:.8rem;" id="mwResult" class="state-display" style="font-size:.82rem;"></div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════
+     SECTION 6 — ASYNC / THUNK
+════════════════════════════════════════ -->
+<div class="section" id="s6">
+  <div class="lesson-header">
+    <div class="lesson-badge">Lesson 6</div>
+    <h2>Async Operations with Thunk</h2>
+    <p>Redux is synchronous by default. <strong>redux-thunk</strong> lets you dispatch functions (thunks) that can perform async work before dispatching regular actions.</p>
+  </div>
+
+  <div class="concept-grid">
+    <div class="concept-card">
+      <h4>What is a Thunk?</h4>
+      <p>A function that wraps an expression to delay evaluation. In Redux, a thunk is a function that returns another function instead of a plain action object.</p>
+    </div>
+    <div class="concept-card">
+      <h4>Loading States Pattern</h4>
+      <p>Track <code>idle → loading → succeeded/failed</code> to give users feedback during async operations.</p>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header"><span class="filename">src/store/slices/usersReducer.js</span><span class="lang-tag">JavaScript</span></div>
+    <pre>
+<span class="cmt">// ─── State shape with async status ──────────────</span>
+<span class="kw">const</span> <span class="var">initialState</span> = {
+  data:   [],
+  status: <span class="str">'idle'</span>,      <span class="cmt">// 'idle' | 'loading' | 'succeeded' | 'failed'</span>
+  error:  <span class="kw">null</span>
+};
+
+<span class="kw">function</span> <span class="fn">usersReducer</span>(state = initialState, action) {
+  <span class="kw">switch</span> (action.type) {
+    <span class="kw">case</span> <span class="str">'users/fetchStart'</span>:
+      <span class="kw">return</span> { ...state, status: <span class="str">'loading'</span>, error: <span class="kw">null</span> };
+    <span class="kw">case</span> <span class="str">'users/fetchSuccess'</span>:
+      <span class="kw">return</span> { ...state, status: <span class="str">'succeeded'</span>, data: action.payload };
+    <span class="kw">case</span> <span class="str">'users/fetchError'</span>:
+      <span class="kw">return</span> { ...state, status: <span class="str">'failed'</span>, error: action.payload };
+    <span class="kw">default</span>: <span class="kw">return</span> state;
+  }
+}
+
+<span class="cmt">// ─── Thunk Action Creator ────────────────────────</span>
+<span class="kw">const</span> <span class="fn">fetchUsers</span> = () => <span class="kw">async</span> (dispatch, getState) => {
+  <span class="cmt">// dispatch receives: dispatch and getState from the store!</span>
+  dispatch({ type: <span class="str">'users/fetchStart'</span> });
+
+  <span class="kw">try</span> {
+    <span class="kw">const</span> <span class="var">res</span>  = <span class="kw">await</span> fetch(<span class="str">'https://jsonplaceholder.typicode.com/users'</span>);
+    <span class="kw">const</span> <span class="var">data</span> = <span class="kw">await</span> res.json();
+    dispatch({ type: <span class="str">'users/fetchSuccess'</span>, payload: data });
+  } <span class="kw">catch</span> (err) {
+    dispatch({ type: <span class="str">'users/fetchError'</span>, payload: err.message });
+  }
+};
+
+<span class="cmt">// ─── Conditional Fetch (check state first) ───────</span>
+<span class="kw">const</span> <span class="fn">fetchUsersIfNeeded</span> = () => (dispatch, getState) => {
+  <span class="kw">const</span> { status } = getState().users;
+  <span class="kw">if</span> (status === <span class="str">'idle'</span>) dispatch(fetchUsers());
+};
+
+<span class="cmt">// ─── Usage ───────────────────────────────────────</span>
+store.dispatch(fetchUsers());          <span class="cmt">// thunk middleware intercepts this</span>
+store.dispatch(fetchUsersIfNeeded());  <span class="cmt">// only fetches once</span></pre>
+  </div>
+
+  <div class="demo-container">
+    <h3>Async Fetch Demo (real API)</h3>
+    <div class="demo-controls">
+      <button class="btn btn-primary" id="fetchBtn" onclick="fetchUsersDemo()">Fetch Users from API</button>
+      <button class="btn btn-neutral" onclick="resetUsers()">Reset</button>
+      <span id="fetchStatus" class="status-badge idle" style="padding:.4rem .9rem;">idle</span>
+    </div>
+    <div id="usersGrid" class="users-grid"></div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════
+     SECTION 7 — REDUX TOOLKIT
+════════════════════════════════════════ -->
+<div class="section" id="s7">
+  <div class="lesson-header">
+    <div class="lesson-badge">Lesson 7 <span class="badge badge-rtk">RTK</span></div>
+    <h2>Redux Toolkit — The Modern Way</h2>
+    <p>RTK is the official, recommended way to write Redux. It eliminates boilerplate with <code>createSlice</code>, <code>createAsyncThunk</code>, and <code>configureStore</code>.</p>
+  </div>
+
+  <div class="concept-grid">
+    <div class="concept-card">
+      <h4>configureStore</h4>
+      <p>Replaces <code>createStore</code>. Auto-adds redux-thunk, DevTools, and good defaults.</p>
+    </div>
+    <div class="concept-card">
+      <h4>createSlice</h4>
+      <p>Generates action creators AND reducer from one object. Uses Immer so you can write "mutating" code safely.</p>
+    </div>
+    <div class="concept-card">
+      <h4>createAsyncThunk</h4>
+      <p>Handles pending/fulfilled/rejected lifecycle automatically. No manual action types needed.</p>
+    </div>
+    <div class="concept-card">
+      <h4>createSelector</h4>
+      <p>Memoized selectors from Reselect. Prevents unnecessary re-renders in React.</p>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab(this,'rtk-slice')">createSlice</div>
+    <div class="tab" onclick="switchTab(this,'rtk-async')">createAsyncThunk</div>
+    <div class="tab" onclick="switchTab(this,'rtk-store')">configureStore</div>
+    <div class="tab" onclick="switchTab(this,'rtk-react')">React Integration</div>
+  </div>
+  <div class="tab-content">
+
+    <div class="tab-panel active" id="tab-rtk-slice">
+      <div class="code-block">
+        <div class="code-header"><span class="filename">src/store/slices/counterSlice.js</span><span class="lang-tag">Redux Toolkit</span></div>
+        <pre>
+<span class="kw">import</span> { createSlice } <span class="kw">from</span> <span class="str">'@reduxjs/toolkit'</span>;
+
+<span class="kw">const</span> <span class="var">counterSlice</span> = createSlice({
+  name: <span class="str">'counter'</span>,              <span class="cmt">// prefix for action types</span>
+  initialState: { value: <span class="num">0</span>, step: <span class="num">1</span> },
+
+  reducers: {
+    <span class="cmt">// Immer lets you write "mutating" code — RTK converts it to immutable!</span>
+    increment(state) {
+      state.value += state.step;  <span class="cmt">// ✅ mutation is OK inside createSlice</span>
+    },
+    decrement(state) {
+      state.value -= state.step;
+    },
+    reset(state) {
+      state.value = <span class="num">0</span>;
+    },
+    setStep(state, action) {       <span class="cmt">// action.payload is the step amount</span>
+      state.step = action.payload;
+    },
+    incrementByAmount(state, action) {
+      state.value += action.payload;
+    }
+  }
+});
+
+<span class="cmt">// RTK auto-generates action creators matching reducer names!</span>
+<span class="kw">export const</span> { increment, decrement, reset, setStep, incrementByAmount }
+  = counterSlice.actions;
+
+<span class="cmt">// Selector</span>
+<span class="kw">export const</span> <span class="fn">selectCount</span> = (state) => state.counter.value;
+
+<span class="kw">export default</span> counterSlice.reducer;</pre>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-rtk-async">
+      <div class="code-block">
+        <div class="code-header"><span class="filename">src/store/slices/usersSlice.js</span><span class="lang-tag">Redux Toolkit</span></div>
+        <pre>
+<span class="kw">import</span> { createSlice, createAsyncThunk } <span class="kw">from</span> <span class="str">'@reduxjs/toolkit'</span>;
+
+<span class="cmt">// ─── createAsyncThunk ────────────────────────────
+// auto-generates: users/fetchAll/pending
+//                 users/fetchAll/fulfilled
+//                 users/fetchAll/rejected</span>
+<span class="kw">export const</span> <span class="fn">fetchUsers</span> = createAsyncThunk(
+  <span class="str">'users/fetchAll'</span>,
+  <span class="kw">async</span> (_, { rejectWithValue }) => {
+    <span class="kw">try</span> {
+      <span class="kw">const</span> <span class="var">res</span> = <span class="kw">await</span> fetch(<span class="str">'https://jsonplaceholder.typicode.com/users'</span>);
+      <span class="kw">if</span> (!res.ok) <span class="kw">throw new</span> Error(<span class="str">'Network error'</span>);
+      <span class="kw">return await</span> res.json();
+    } <span class="kw">catch</span> (err) {
+      <span class="kw">return</span> rejectWithValue(err.message);
+    }
+  }
+);
+
+<span class="kw">const</span> <span class="var">usersSlice</span> = createSlice({
+  name: <span class="str">'users'</span>,
+  initialState: { data: [], status: <span class="str">'idle'</span>, error: <span class="kw">null</span> },
+  reducers: {},          <span class="cmt">// sync reducers (empty here)</span>
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchUsers.pending,   (state) => {
+        state.status = <span class="str">'loading'</span>;
+      })
+      .addCase(fetchUsers.fulfilled, (state, action) => {
+        state.status = <span class="str">'succeeded'</span>;
+        state.data = action.payload;
+      })
+      .addCase(fetchUsers.rejected,  (state, action) => {
+        state.status = <span class="str">'failed'</span>;
+        state.error = action.payload;
+      });
+  }
+});
+
+<span class="kw">export default</span> usersSlice.reducer;</pre>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-rtk-store">
+      <div class="code-block">
+        <div class="code-header"><span class="filename">src/store/index.js</span><span class="lang-tag">Redux Toolkit</span></div>
+        <pre>
+<span class="kw">import</span> { configureStore } <span class="kw">from</span> <span class="str">'@reduxjs/toolkit'</span>;
+<span class="kw">import</span> counterReducer <span class="kw">from</span> <span class="str">'./slices/counterSlice'</span>;
+<span class="kw">import</span> todosReducer   <span class="kw">from</span> <span class="str">'./slices/todosSlice'</span>;
+<span class="kw">import</span> usersReducer   <span class="kw">from</span> <span class="str">'./slices/usersSlice'</span>;
+<span class="kw">import</span> cartReducer    <span class="kw">from</span> <span class="str">'./slices/cartSlice'</span>;
+
+<span class="kw">export const</span> <span class="var">store</span> = configureStore({
+  reducer: {
+    counter: counterReducer,
+    todos:   todosReducer,
+    users:   usersReducer,
+    cart:    cartReducer,
+  },
+  <span class="cmt">// middleware auto-includes: redux-thunk + immutability checks + serializability</span>
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware().concat(customApiMiddleware),
+
+  devTools: process.env.NODE_ENV !== <span class="str">'production'</span>,  <span class="cmt">// Redux DevTools</span>
+});
+
+<span class="cmt">// TypeScript: infer types from the store</span>
+<span class="kw">export type</span> <span class="type">RootState</span>   = ReturnType&lt;<span class="kw">typeof</span> store.getState&gt;;
+<span class="kw">export type</span> <span class="type">AppDispatch</span> = <span class="kw">typeof</span> store.dispatch;</pre>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-rtk-react">
+      <div class="code-block">
+        <div class="code-header"><span class="filename">src/components/Counter.jsx</span><span class="lang-tag">React + Redux</span></div>
+        <pre>
+<span class="kw">import</span> React <span class="kw">from</span> <span class="str">'react'</span>;
+<span class="kw">import</span> { useSelector, useDispatch } <span class="kw">from</span> <span class="str">'react-redux'</span>;
+<span class="kw">import</span> { increment, decrement, reset, selectCount } <span class="kw">from</span> <span class="str">'../store/slices/counterSlice'</span>;
+
+<span class="kw">export function</span> <span class="fn">Counter</span>() {
+  <span class="cmt">// useSelector: read from store (subscribes to changes)</span>
+  <span class="kw">const</span> count = useSelector(selectCount);
+
+  <span class="cmt">// useDispatch: send actions to the store</span>
+  <span class="kw">const</span> dispatch = useDispatch();
+
+  <span class="kw">return</span> (
+    &lt;div&gt;
+      &lt;h2&gt;Count: {count}&lt;/h2&gt;
+      &lt;button onClick={() =&gt; dispatch(increment())}&gt;+&lt;/button&gt;
+      &lt;button onClick={() =&gt; dispatch(decrement())}&gt;−&lt;/button&gt;
+      &lt;button onClick={() =&gt; dispatch(reset())}&gt;Reset&lt;/button&gt;
+    &lt;/div&gt;
+  );
+}
+
+<span class="cmt">// ─── App setup ───────────────────────────────────</span>
+<span class="kw">import</span> { Provider } <span class="kw">from</span> <span class="str">'react-redux'</span>;
+<span class="kw">import</span> { store }    <span class="kw">from</span> <span class="str">'./store'</span>;
+
+<span class="kw">function</span> <span class="fn">App</span>() {
+  <span class="kw">return</span> (
+    &lt;Provider store={store}&gt;   {/* makes store available everywhere */}
+      &lt;Counter /&gt;
+    &lt;/Provider&gt;
+  );
+}</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════
+     SECTION 8 — SHOPPING CART (Advanced)
+════════════════════════════════════════ -->
+<div class="section" id="s8">
+  <div class="lesson-header">
+    <div class="lesson-badge">Lesson 8 · Advanced Demo</div>
+    <h2>Shopping Cart — Real-World Pattern</h2>
+    <p>Combines multiple slices, selectors, derived state, and cross-slice actions into one coherent app.</p>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header"><span class="filename">src/store/slices/cartSlice.js</span><span class="lang-tag">Redux Toolkit</span></div>
+    <pre>
+<span class="kw">import</span> { createSlice, createSelector } <span class="kw">from</span> <span class="str">'@reduxjs/toolkit'</span>;
+
+<span class="kw">const</span> <span class="var">cartSlice</span> = createSlice({
+  name: <span class="str">'cart'</span>,
+  initialState: { items: {}, coupon: <span class="kw">null</span> },
+  <span class="cmt">// items: { [productId]: { id, name, price, quantity } }</span>
+
+  reducers: {
+    addToCart(state, action) {
+      <span class="kw">const</span> { id, name, price } = action.payload;
+      <span class="kw">if</span> (state.items[id]) {
+        state.items[id].quantity++;       <span class="cmt">// Immer: direct mutation OK!</span>
+      } <span class="kw">else</span> {
+        state.items[id] = { id, name, price, quantity: <span class="num">1</span> };
+      }
+    },
+    removeFromCart(state, action) {
+      <span class="kw">delete</span> state.items[action.payload];
+    },
+    updateQty(state, action) {
+      <span class="kw">const</span> { id, qty } = action.payload;
+      <span class="kw">if</span> (qty &lt;= <span class="num">0</span>) <span class="kw">delete</span> state.items[id];
+      <span class="kw">else</span> state.items[id].quantity = qty;
+    },
+    applyCoupon(state, action) {
+      state.coupon = action.payload;
+    },
+    clearCart(state) {
+      state.items = {};
+      state.coupon = <span class="kw">null</span>;
+    }
+  }
+});
+
+<span class="cmt">// ─── Memoized Selectors (createSelector) ─────────</span>
+<span class="kw">const</span> <span class="fn">selectCartItems</span>   = state => Object.values(state.cart.items);
+<span class="kw">const</span> <span class="fn">selectCoupon</span>      = state => state.cart.coupon;
+
+<span class="kw">export const</span> <span class="fn">selectCartTotal</span> = createSelector(
+  [selectCartItems, selectCoupon],
+  (items, coupon) => {
+    <span class="kw">const</span> subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, <span class="num">0</span>);
+    <span class="kw">const</span> discount = coupon === <span class="str">'SAVE10'</span> ? subtotal * <span class="num">0.1</span> : <span class="num">0</span>;
+    <span class="kw">return</span> { subtotal, discount, total: subtotal - discount };
+  }
+);
+
+<span class="kw">export const</span> <span class="fn">selectItemCount</span> = createSelector(
+  selectCartItems,
+  items => items.reduce((sum, i) => sum + i.quantity, <span class="num">0</span>)
+);</pre>
+  </div>
+
+  <div class="demo-container">
+    <h3>Shopping Cart Demo</h3>
+    <div class="cart-grid">
+      <div>
+        <div class="state-label" style="margin-bottom:.5rem;">Products</div>
+        <div id="productList"></div>
+      </div>
+      <div>
+        <div class="state-label" style="margin-bottom:.5rem;">Cart (<span id="cartCount">0</span> items)</div>
+        <div id="cartList"><div style="color:var(--muted);font-size:.85rem;">Cart is empty</div></div>
+        <div id="cartTotals" style="margin-top:.5rem; display:none;"></div>
+        <div style="margin-top:.7rem; display:flex; gap:.5rem;">
+          <button class="btn btn-warning" onclick="cartCoupon()">Apply SAVE10</button>
+          <button class="btn btn-danger"  onclick="cartClear()">Clear Cart</button>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:1rem;">
+      <div class="state-label">cart slice state</div>
+      <div class="state-display" id="cartState">{ items: {}, coupon: null }</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════
+     SECTION 9 — BEST PRACTICES
+════════════════════════════════════════ -->
+<div class="section" id="s9">
+  <div class="lesson-header">
+    <div class="lesson-badge">Lesson 9 · Advanced</div>
+    <h2>Best Practices & Project Structure</h2>
+    <p>Production patterns used in real teams.</p>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header"><span class="filename">Project Structure</span><span class="lang-tag">Standard</span></div>
+    <pre>
+src/
+├── app/
+│   └── store.js               <span class="cmt">← configureStore (single source)</span>
+│
+├── features/                  <span class="cmt">← Feature-based (not type-based!)</span>
+│   ├── counter/
+│   │   ├── counterSlice.js    <span class="cmt">← reducer + actions + selectors</span>
+│   │   ├── Counter.jsx        <span class="cmt">← UI component</span>
+│   │   └── counterAPI.js      <span class="cmt">← API calls (if any)</span>
+│   ├── todos/
+│   │   ├── todosSlice.js
+│   │   ├── TodoList.jsx
+│   │   └── TodoItem.jsx
+│   ├── auth/
+│   │   ├── authSlice.js
+│   │   └── LoginForm.jsx
+│   └── cart/
+│       ├── cartSlice.js
+│       └── CartSidebar.jsx
+│
+├── components/                <span class="cmt">← Shared / generic UI components</span>
+│   ├── Button.jsx
+│   ├── Modal.jsx
+│   └── Spinner.jsx
+│
+├── hooks/                     <span class="cmt">← Typed custom hooks</span>
+│   ├── useAppDispatch.js      <span class="cmt">← typed dispatch</span>
+│   └── useAppSelector.js      <span class="cmt">← typed selector</span>
+│
+└── utils/
+    └── api.js                 <span class="cmt">← axios instance, interceptors</span></pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header"><span class="filename">src/hooks/useAppSelector.js</span><span class="lang-tag">Custom Hooks</span></div>
+    <pre>
+<span class="kw">import</span> { useDispatch, useSelector, useStore } <span class="kw">from</span> <span class="str">'react-redux'</span>;
+
+<span class="cmt">// Typed hooks — use these instead of raw useDispatch/useSelector</span>
+<span class="kw">export const</span> useAppDispatch = () => useDispatch();
+<span class="kw">export const</span> useAppSelector = useSelector;
+<span class="kw">export const</span> useAppStore    = useStore;
+
+<span class="cmt">// ─── Example: domain-specific hook ──────────────</span>
+<span class="kw">export function</span> <span class="fn">useCart</span>() {
+  <span class="kw">const</span> dispatch = useAppDispatch();
+  <span class="kw">const</span> items    = useAppSelector(selectCartItems);
+  <span class="kw">const</span> total    = useAppSelector(selectCartTotal);
+
+  <span class="kw">return</span> {
+    items, total,
+    addItem:    (product) => dispatch(addToCart(product)),
+    removeItem: (id)      => dispatch(removeFromCart(id)),
+    clear:      ()        => dispatch(clearCart()),
+  };
+}
+
+<span class="cmt">// Usage in a component:</span>
+<span class="kw">function</span> <span class="fn">CartIcon</span>() {
+  <span class="kw">const</span> { items, total, removeItem } = useCart();
+  <span class="kw">return</span> &lt;span&gt;{items.length} items — ${total.total.toFixed(<span class="num">2</span>)}&lt;/span&gt;;
+}</pre>
+  </div>
+
+  <div class="concept-grid">
+    <div class="concept-card">
+      <h4>✅ DO: Normalise State</h4>
+      <p>Store collections as <code>{ids: [], entities: {}}</code> — not as arrays. Use <code>createEntityAdapter</code> from RTK for free CRUD operations.</p>
+    </div>
+    <div class="concept-card">
+      <h4>✅ DO: Use Selectors</h4>
+      <p>Encapsulate all state access in selector functions. Memoize with <code>createSelector</code> to avoid unnecessary re-renders.</p>
+    </div>
+    <div class="concept-card">
+      <h4>❌ AVOID: Over-Using Redux</h4>
+      <p>Not everything needs Redux. Local UI state (modals, form inputs, hover) should stay in <code>useState</code>.</p>
+    </div>
+    <div class="concept-card">
+      <h4>✅ DO: RTK Query</h4>
+      <p>For data fetching, consider RTK Query — it handles caching, invalidation, loading states, and more automatically.</p>
+    </div>
+    <div class="concept-card">
+      <h4>❌ AVOID: Thunks for Everything</h4>
+      <p>For complex async flows, use RTK Query or Redux-Saga. Keep thunks simple — one concern per thunk.</p>
+    </div>
+    <div class="concept-card">
+      <h4>✅ DO: Install DevTools</h4>
+      <p>The Redux DevTools browser extension gives you time-travel debugging, action replay, and state inspection.</p>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <div class="lesson-header">
+    <h2 style="font-size:1.4rem;">Learning Path Summary</h2>
+  </div>
+  <div class="steps">
+    <div class="step"><div class="step-body"><h4>Understand the Mental Model</h4><p>Store → Action → Reducer → New State → UI. Practice this until it's second nature.</p></div></div>
+    <div class="step"><div class="step-body"><h4>Build without RTK first</h4><p>Write vanilla Redux (createStore, combineReducers) so you understand what RTK abstracts away.</p></div></div>
+    <div class="step"><div class="step-body"><h4>Move to Redux Toolkit</h4><p>Use <code>configureStore</code> + <code>createSlice</code>. Enjoy writing "mutating" code via Immer.</p></div></div>
+    <div class="step"><div class="step-body"><h4>Master Async with createAsyncThunk</h4><p>Handle loading, success, and error states for API calls cleanly.</p></div></div>
+    <div class="step"><div class="step-body"><h4>Memoized Selectors</h4><p>Use <code>createSelector</code> to compute derived state efficiently.</p></div></div>
+    <div class="step"><div class="step-body"><h4>Explore RTK Query</h4><p>The next evolution — handles server state, caching, and sync out of the box.</p></div></div>
+  </div>
+</div>
+
+</main>
+
+<!-- ════════════════════════════════════════
+     SCRIPTS — Vanilla Redux demos (no bundler)
+════════════════════════════════════════ -->
+<script>
+// ─── Navigation ─────────────────────────────────────────────
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('#mainNav button').forEach((b, i) => {
+    b.classList.toggle('active', `s${i}` === id);
+  });
+}
+
+function switchTab(el, id) {
+  const tabContent = el.closest('.tab-content, .section').querySelector('.tab-content') || el.parentElement.nextElementSibling;
+  el.closest('.tabs').querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  // find panels in nearest ancestor
+  const parent = el.closest('.section');
+  parent.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  const panel = parent.querySelector(`#tab-${id}`);
+  if (panel) panel.classList.add('active');
+}
+
+// ─── Section 2: Counter Demo ─────────────────────────────────
+const Redux = window.Redux || {};
+
+// Simple counter store using script-included Redux
+let counterState = { value: 0, history: [] };
+const counterListeners = [];
+
+function counterDispatch(type) {
+  const prev = counterState.value;
+  if      (type === 'inc')   counterState = { value: prev + 1,    history: [...counterState.history, prev + 1] };
+  else if (type === 'dec')   counterState = { value: prev - 1,    history: [...counterState.history, prev - 1] };
+  else if (type === 'by5')   counterState = { value: prev + 5,    history: [...counterState.history, prev + 5] };
+  else if (type === 'by10')  counterState = { value: prev + 10,   history: [...counterState.history, prev + 10] };
+  else if (type === 'reset') counterState = { value: 0,           history: [...counterState.history, 0] };
+  renderCounter(type);
+}
+
+function renderCounter(actionType) {
+  document.getElementById('counterDisplay').textContent = counterState.value;
+  document.getElementById('counterState').textContent = JSON.stringify(counterState, null, 2);
+
+  const log = document.getElementById('counterLog');
+  const ts  = new Date().toLocaleTimeString();
+  const entry = document.createElement('div');
+  entry.className = 'log-entry';
+  entry.innerHTML = `<span class="log-ts">${ts}</span> <span class="log-action">${actionType}</span> → <span class="log-state">value: ${counterState.value}</span>`;
+  log.prepend(entry);
+}
+
+// ─── Section 3: Combined Demo ─────────────────────────────────
+let combinedState = {
+  counter: { value: 0 },
+  auth: { user: null, isLoggedIn: false },
+  notifications: []
+};
+
+function combinedDemo(type) {
+  const s = combinedState;
+  if      (type === 'inc')   combinedState = { ...s, counter: { value: s.counter.value + 1 } };
+  else if (type === 'dec')   combinedState = { ...s, counter: { value: s.counter.value - 1 } };
+  else if (type === 'login') combinedState = { ...s, auth: { user: { name: 'Alice', role: 'admin' }, isLoggedIn: true } };
+  else if (type === 'logout')combinedState = { ...s, auth: { user: null, isLoggedIn: false } };
+  else if (type === 'notif') combinedState = { ...s, notifications: [...s.notifications, { id: Date.now(), message: 'Hello! ' + new Date().toLocaleTimeString() }] };
+  document.getElementById('combinedState').textContent = JSON.stringify(combinedState, null, 2);
+}
+// init
+combinedDemo('');
+
+// ─── Section 4: Todo App ─────────────────────────────────────
+let todoState = { items: [], filter: 'all', nextId: 1 };
+
+function todosDispatch(action) {
+  const s = todoState;
+  switch(action.type) {
+    case 'add':
+      if (!action.text.trim()) return;
+      todoState = { ...s, items: [...s.items, { id: s.nextId, text: action.text, completed: false }], nextId: s.nextId + 1 };
+      break;
+    case 'toggle':
+      todoState = { ...s, items: s.items.map(t => t.id === action.id ? { ...t, completed: !t.completed } : t) };
+      break;
+    case 'delete':
+      todoState = { ...s, items: s.items.filter(t => t.id !== action.id) };
+      break;
+    case 'clearCompleted':
+      todoState = { ...s, items: s.items.filter(t => !t.completed) };
+      break;
+    case 'filter':
+      todoState = { ...s, filter: action.filter };
+      break;
+  }
+  renderTodos();
+}
+
+function addTodo() {
+  const input = document.getElementById('todoInput');
+  todosDispatch({ type: 'add', text: input.value });
+  input.value = '';
+}
+
+function setFilter(f, btn) {
+  todosDispatch({ type: 'filter', filter: f });
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function clearCompleted() { todosDispatch({ type: 'clearCompleted' }); }
+
+function renderTodos() {
+  const { items, filter } = todoState;
+  let visible = items;
+  if (filter === 'active')    visible = items.filter(t => !t.completed);
+  if (filter === 'completed') visible = items.filter(t => t.completed);
+
+  const list = document.getElementById('todoList');
+  if (!visible.length) {
+    list.innerHTML = `<div style="color:var(--muted);text-align:center;padding:1rem;font-size:.85rem;">${filter === 'all' ? 'No todos yet!' : 'No ' + filter + ' todos.'}</div>`;
+  } else {
+    list.innerHTML = visible.map(t => `
+      <div class="todo-item ${t.completed ? 'done' : ''}">
+        <input type="checkbox" ${t.completed ? 'checked' : ''} onchange="todosDispatch({type:'toggle',id:${t.id}})" style="accent-color:var(--accent);cursor:pointer;">
+        <span>${t.text}</span>
+        <button onclick="todosDispatch({type:'delete',id:${t.id}})" style="background:var(--red);border:none;color:#fff;padding:.2rem .5rem;border-radius:4px;cursor:pointer;font-size:.75rem;">✕</button>
+      </div>`).join('');
+  }
+  document.getElementById('todoState').textContent = JSON.stringify({ items: todoState.items, filter: todoState.filter }, null, 2);
+}
+
+// ─── Section 5: Middleware Visualizer ────────────────────────
+async function runMwDemo(actionType) {
+  const steps = ['mw0','mw1','mw2','mw3','mw4'];
+  steps.forEach(id => document.getElementById(id).classList.remove('active'));
+
+  const isProtected = actionType === 'cart/checkout';
+  const mwResult = document.getElementById('mwResult');
+
+  for (let i = 0; i <= (isProtected ? 2 : 4); i++) {
+    document.getElementById(steps[i]).classList.add('active');
+    await delay(500);
+    if (i < (isProtected ? 2 : 4)) document.getElementById(steps[i]).classList.remove('active');
+  }
+
+  if (isProtected) {
+    document.getElementById('mw2').style.borderLeftColor = 'var(--red)';
+    mwResult.textContent = `🔐 Auth Middleware BLOCKED "${actionType}" — user not logged in. Dispatched: ui/showLoginModal instead.`;
+    setTimeout(() => { document.getElementById('mw2').style.borderLeftColor = ''; document.getElementById('mw2').classList.remove('active'); }, 1500);
+  } else {
+    mwResult.textContent = `✅ Action "${actionType}" passed through all middleware and reached the reducer. State updated.`;
+    setTimeout(() => { steps.forEach(id => document.getElementById(id).classList.remove('active')); }, 1200);
+  }
+}
+
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ─── Section 6: Async Demo ────────────────────────────────────
+let usersState = { data: [], status: 'idle' };
+
+async function fetchUsersDemo() {
+  if (usersState.status === 'loading') return;
+  usersState = { data: [], status: 'loading' };
+  renderUsers();
+
+  try {
+    const res  = await fetch('https://jsonplaceholder.typicode.com/users');
+    const data = await res.json();
+    usersState = { data, status: 'succeeded' };
+  } catch (e) {
+    usersState = { data: [], status: 'failed' };
+  }
+  renderUsers();
+}
+
+function resetUsers() { usersState = { data: [], status: 'idle' }; renderUsers(); }
+
+function renderUsers() {
+  const badge = document.getElementById('fetchStatus');
+  badge.textContent = usersState.status;
+  badge.className = `status-badge ${usersState.status === 'succeeded' ? 'success' : usersState.status}`;
+
+  const grid = document.getElementById('usersGrid');
+  if (usersState.status === 'loading') {
+    grid.innerHTML = '<div style="color:var(--green);font-family:JetBrains Mono,monospace;font-size:.85rem;grid-column:1/-1;">⏳ Fetching…</div>';
+    return;
+  }
+  if (!usersState.data.length) { grid.innerHTML = ''; return; }
+  grid.innerHTML = usersState.data.slice(0, 6).map(u => `
+    <div class="user-card">
+      <div class="avatar">${u.name[0]}</div>
+      <div class="uname">${u.name}</div>
+      <div class="uemail">${u.email}</div>
+    </div>`).join('');
+}
+
+// ─── Section 8: Shopping Cart Demo ───────────────────────────
+const PRODUCTS = [
+  { id: 1, name: 'Redux Course',   price: 29.99, emoji: '📚' },
+  { id: 2, name: 'Dev Keyboard',   price: 89.99, emoji: '⌨️' },
+  { id: 3, name: 'Mechanical Mouse',price: 49.99, emoji: '🖱️' },
+  { id: 4, name: 'Monitor Stand',  price: 34.99, emoji: '🖥️' },
+];
+
+let cartState = { items: {}, coupon: null };
+
+function cartDispatch(action) {
+  const s = cartState;
+  switch(action.type) {
+    case 'add': {
+      const p = action.payload;
+      if (s.items[p.id]) {
+        cartState = { ...s, items: { ...s.items, [p.id]: { ...s.items[p.id], quantity: s.items[p.id].quantity + 1 } } };
+      } else {
+        cartState = { ...s, items: { ...s.items, [p.id]: { ...p, quantity: 1 } } };
+      }
+      break;
+    }
+    case 'remove':
+      const { [action.id]: removed, ...rest } = s.items;
+      cartState = { ...s, items: rest };
+      break;
+    case 'coupon':
+      cartState = { ...s, coupon: action.code };
+      break;
+    case 'clear':
+      cartState = { items: {}, coupon: null };
+      break;
+  }
+  renderCart();
+}
+
+function cartCoupon() { cartDispatch({ type: 'coupon', code: 'SAVE10' }); }
+function cartClear()  { cartDispatch({ type: 'clear' }); }
+
+function renderCart() {
+  // products
+  document.getElementById('productList').innerHTML = PRODUCTS.map(p => `
+    <div class="cart-item" style="margin-bottom:.4rem;">
+      <span>${p.emoji} <span class="name">${p.name}</span></span>
+      <span class="price">$${p.price}</span>
+      <button class="btn btn-success" style="padding:.3rem .7rem;font-size:.78rem;" onclick="cartDispatch({type:'add',payload:${JSON.stringify(p)}})">+ Add</button>
+    </div>`).join('');
+
+  const cartItems = Object.values(cartState.items);
+  const cartEl = document.getElementById('cartList');
+  document.getElementById('cartCount').textContent = cartItems.reduce((s,i) => s+i.quantity, 0);
+
+  if (!cartItems.length) {
+    cartEl.innerHTML = '<div style="color:var(--muted);font-size:.85rem;">Cart is empty</div>';
+    document.getElementById('cartTotals').style.display = 'none';
+  } else {
+    cartEl.innerHTML = cartItems.map(i => `
+      <div class="cart-item" style="margin-bottom:.4rem;">
+        <span class="name">${i.emoji || '🛍'} ${i.name} ×${i.quantity}</span>
+        <span class="price">$${(i.price * i.quantity).toFixed(2)}</span>
+        <button onclick="cartDispatch({type:'remove',id:${i.id}})" style="background:var(--red);border:none;color:#fff;padding:.2rem .5rem;border-radius:4px;cursor:pointer;font-size:.75rem;">✕</button>
+      </div>`).join('');
+
+    const subtotal = cartItems.reduce((s,i) => s + i.price*i.quantity, 0);
+    const discount = cartState.coupon === 'SAVE10' ? subtotal * 0.1 : 0;
+    const total    = subtotal - discount;
+    const totEl    = document.getElementById('cartTotals');
+    totEl.style.display = 'block';
+    totEl.innerHTML = `
+      <div style="background:var(--border);border-radius:7px;padding:.7rem;font-size:.85rem;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:.3rem;"><span>Subtotal</span><span>$${subtotal.toFixed(2)}</span></div>
+        ${discount ? `<div style="display:flex;justify-content:space-between;color:var(--green);margin-bottom:.3rem;"><span>Coupon SAVE10</span><span>−$${discount.toFixed(2)}</span></div>` : ''}
+        <div class="cart-total"><span>Total</span><span>$${total.toFixed(2)}</span></div>
+      </div>`;
+  }
+
+  document.getElementById('cartState').textContent = JSON.stringify(cartState, null, 2);
+}
+
+// init all demos
+renderCart();
+renderUsers();
+combinedDemo('');
+</script>
+
+</body>
+</html>
